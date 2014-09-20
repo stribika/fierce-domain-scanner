@@ -27,6 +27,7 @@ my $http_connect;
 my $nopattern;
 my $range;
 my $search;
+my $exclude;
 my $suppress;
 my $tcp_timeout;
 my $threads;
@@ -104,6 +105,7 @@ my $result = GetOptions (
                         'dnsserver=s'   => \$dns_server,
                         'version'       => \$version,
                         'search=s'      => \$search,
+                        'exclude=s'     => \$exclude,
                         'wordlist=s'    => \$wordlist,
                         'fulloutput'    => \$full_output,
                         'nopattern'     => \$nopattern,
@@ -206,6 +208,7 @@ if ($traverse) {
 }
 
 my @search_strings = split(/\x2C/, $search) if $search;
+my @exclude_strings = split(/\x2C/, $exclude) if $exclude;
 my $query          = $res->query($dns, 'NS');
 
 if ($query) {
@@ -408,7 +411,7 @@ sub find_nearby {
       next if ($name[4] eq $wildcard_dns);
       if ($search) {
         foreach (@search_strings) {
-          if ($name[$#name] =~ /$_/ || $nopattern || !$dns) {
+          if ($name[$#name] =~ /$_/ && !is_excluded($name[$#name], \@exclude_strings) || $nopattern || !$dns) {
             $count++;
             $known_names{"$octet[0].$octet[1].$octet[2].$octet[3],"
                          . "$name[$#name]"} = 1;
@@ -425,6 +428,14 @@ sub find_nearby {
       find_nearby("$octet[0].$octet[1].$octet[2].$octet[3]");  # recurse
     }
   }
+}
+
+sub is_excluded {
+    my ( $name, $exclude ) = @_;
+    for (@$exclude) {
+        if ($name =~ /$_/) { return 1; }
+    }
+    return 0;
 }
 
 sub http_connect {
@@ -563,6 +574,8 @@ Options:
                 hosts found, as it will continue to traverse once it locates
                 servers that you specified in your search list.  The more the
                 better.
+        -exclude        Search exclusion list. Use with -search. If both match,
+                -exclude wins.
         -suppress       Suppress all TTY output (when combined with -file).
         -tcptimeout     Specify a different timeout (default 10 seconds).  You
                 may want to increase this if the DNS server you are querying
