@@ -12,7 +12,7 @@ use Net::DNS;
 use IO::Socket;
 use Socket;
 use Getopt::Long;
-  		
+
 # command line options
 my $class_c;
 my $delay = 0;
@@ -20,21 +20,21 @@ my $dns;
 my $dns_file;
 my $dns_server;
 my @dns_servers;
-my $filename;  
+my $filename;
 my $full_output;
-my $help; 
-my $http_connect;  
-my $nopattern;  
+my $help;
+my $http_connect;
+my $nopattern;
 my $range;
 my $search;
 my $suppress;
 my $tcp_timeout;
 my $threads;
-my $traverse;   
-my $version;   
-my $wide;    		
-my $wordlist;		
-                  			
+my $traverse;
+my $version;
+my $wide;
+my $wordlist;
+
 my @common_cnames;
 my $count_hostnames = 0;
 my @domain_ns;
@@ -67,9 +67,9 @@ BEGIN {
   $SIG{__DIE__}  = sub { };
   $SIG{__WARN__} = sub { };
 }
-  
+
 # try and load thread modules, if it works import their functions
-BEGIN { 
+BEGIN {
   eval {
     require threads;
     require threads::shared;
@@ -91,25 +91,25 @@ BEGIN {
   $SIG{__WARN__} = 'DEFAULT';
 }
 
-my $result = GetOptions (	
-			'dns=s'		=> \$dns, 
-	                'file=s'	=> \$filename,
-                  	'suppress'	=> \$suppress,
-                  	'help'		=> \$help, 
-                  	'connect=s'	=> \$http_connect,
-                  	'range=s'	=> \$range,
-                  	'wide'		=> \$wide,
-                  	'delay=i'	=> \$delay,
-                  	'dnsfile=s'	=> \$dns_file,
-                  	'dnsserver=s'	=> \$dns_server,
-                  	'version'	=> \$version,
-                  	'search=s'	=> \$search,
-                  	'wordlist=s'	=> \$wordlist,
-                  	'fulloutput'	=> \$full_output,
-                  	'nopattern'	=> \$nopattern,
-                  	'tcptimeout=i'	=> \$tcp_timeout,
-                  	'traverse=i'	=> \$traverse,
-                  	'threads=i'	=> \$threads,
+my $result = GetOptions (
+                        'dns=s'         => \$dns,
+                        'file=s'        => \$filename,
+                        'suppress'      => \$suppress,
+                        'help'          => \$help,
+                        'connect=s'     => \$http_connect,
+                        'range=s'       => \$range,
+                        'wide'          => \$wide,
+                        'delay=i'       => \$delay,
+                        'dnsfile=s'     => \$dns_file,
+                        'dnsserver=s'   => \$dns_server,
+                        'version'       => \$version,
+                        'search=s'      => \$search,
+                        'wordlist=s'    => \$wordlist,
+                        'fulloutput'    => \$full_output,
+                        'nopattern'     => \$nopattern,
+                        'tcptimeout=i'  => \$tcp_timeout,
+                        'traverse=i'    => \$traverse,
+                        'threads=i'     => \$threads,
                         );
 
 help()                   if $help;
@@ -129,43 +129,43 @@ if ($filename && $filename ne '') {
     print "File already exists, do you want to overwrite it? [Y|N] ";
     chomp(my $overwrite = <STDIN>);
     if ($overwrite eq 'y' || $overwrite eq 'Y') {
-      open FILE, '>', $filename 
+      open FILE, '>', $filename
         or quit_early("Having trouble opening $filename anyway");
     } else {
       quit_early('Okay, giving up');
-    } 
+    }
   } else {
-    open FILE, '>', $filename 
+    open FILE, '>', $filename
       or quit_early("Having trouble opening $filename");
   }
   output('Now logging to ' . $filename);
-} 
+}
 
 if ($http_connect) {
   unless (-e $http_connect) {
-    open (HEADERS, "$http_connect") 
+    open (HEADERS, "$http_connect")
       or quit_early("Having trouble opening $http_connect");
     close HEADERS;
-  } 
-} 
+  }
+}
 
 # if user doesn't provide a number, they both end up at 0
-quit_early('Your delay tag must be a positive integer')  
+quit_early('Your delay tag must be a positive integer')
   if ($delay && $delay != 0 && $delay !~ /^\d*$/);
-quit_early('Your thread tag must be a positive integer') 
+quit_early('Your thread tag must be a positive integer')
   if ($threads && $threads != 0 && $threads !~ /^\d*$/);
-  
+
 if ($threads && !$thread_support) {
   quit_early('Perl is not configured to support ithreads');
 }
-  
+
 if ($dns_file) {
-  open (DNSFILE, '<', $dns_file) 
+  open (DNSFILE, '<', $dns_file)
    or quit_early("Can't open $dns_file");
    for (<DNSFILE>) {
      chomp;
      push @dns_servers, $_;
-   }  
+   }
    if (@dns_servers) {
      output("Using DNS servers from $dns_file");
    } else {
@@ -191,7 +191,7 @@ if ($tcp_timeout) {
 
 if ($range) {
   $nopattern = 1;
-  quit_early('-range must be combined with -dnsserver', $logging, $suppress) 
+  quit_early('-range must be combined with -dnsserver', $logging, $suppress)
     if !$dns_server;
   $res->nameservers($dns_server);
   find_nearby($range);
@@ -248,7 +248,7 @@ if (@zone) {
   $wordlist = $wordlist || 'hosts.txt';
   if (-e $wordlist) {
     # user provided or default
-    open (WORDLIST, '<', $wordlist)   or 
+    open (WORDLIST, '<', $wordlist)   or
     open (WORDLIST, '<', 'hosts.txt') or
     quit_early("Can't open $wordlist or the default wordlist");
     for (<WORDLIST>){
@@ -286,13 +286,13 @@ if (@zone) {
       my $kid = new threads(\&search_host, $stream);
       $stream->enqueue(undef); #for each thread
     }
-    foreach my $thread (threads->list) { 
-     $thread->join if ($thread->tid && !threads::equal($thread, threads->self)); 
-    } 
+    foreach my $thread (threads->list) {
+     $thread->join if ($thread->tid && !threads::equal($thread, threads->self));
+    }
   } else {
     foreach my $host (@common_cnames) {
       search_host("$host.$dns");
-    }  
+    }
   }
   # write to file any output generated by child threads
   print FILE for @output;
@@ -318,9 +318,9 @@ foreach my $athroughc (sort keys(%subnets)) {
 &http_connect if $http_connect;
 
 output("\nDone with Fierce scan: http://ha.ckers.org/fierce/\n"
-        . "Found $count entries.\n" 
+        . "Found $count entries.\n"
         . ($http_connect ? "and $webservers webservers." : ""));
-          
+
 output('Have a nice day.');
 close FILE if $logging;
 
@@ -349,7 +349,7 @@ sub search_host {
   }
 
   # only runs once if not threaded
-  while (my $search_item = $threads ? $upstream->dequeue : shift) {    
+  while (my $search_item = $threads ? $upstream->dequeue : shift) {
     next unless my $packet = $resbf->search($search_item);
     foreach my $answer ($packet->answer) {
       my @name = split (/\t/, $answer->string);
@@ -359,16 +359,16 @@ sub search_host {
         $this_ip = $name[4];
         find_nearby($this_ip) if !$known_ips{$this_ip};
         $known_ips{$answer->address} = 1;
-        push @wildcards, "$wildcard_dns\t$search_item"; #may do something later 
+        push @wildcards, "$wildcard_dns\t$search_item"; #may do something later
         next;
-      } 
-      
+      }
+
       $this_ip = $name[4];
       find_nearby($this_ip) if !$known_ips{$this_ip};
       $known_ips{$this_ip} = 1;
       next if $known_names{"$this_ip,$search_item"};
       $count++;
-      $known_names{"$this_ip,$search_item"} = 1; 
+      $known_names{"$this_ip,$search_item"} = 1;
       output("$this_ip\t$search_item");
     }
   }
@@ -385,14 +385,14 @@ sub find_nearby {
   } else { # user provided range
     if ($octet[3] =~ /(\d*)-(\d*)/) {
       ($lowest, $highest) = ($1, $2);
-      quit_early("Your range doesn't make sense, try again") 
+      quit_early("Your range doesn't make sense, try again")
         if $highest < $lowest;
     } else { # automatic call
       $lowest  = $octet[3] < $traverse       ? 0   : $octet[3] - $traverse;
       $highest = $octet[3] > 255 - $traverse ? 255 : $octet[3] + $traverse;
     }
   }
-  
+
   foreach $class_c ($lowest..$highest) {
     sleep $delay;
     next if $class_c eq $octet[3];
@@ -405,7 +405,7 @@ sub find_nearby {
       next unless ($answer->type eq 'A' || $answer->type eq 'PTR');
       my @name = split (/\t/, $answer->string);
       chop $name[$#name];
-      next if ($name[4] eq $wildcard_dns); 
+      next if ($name[4] eq $wildcard_dns);
       if ($search) {
         foreach (@search_strings) {
           if ($name[$#name] =~ /$_/ || $nopattern || !$dns) {
@@ -413,16 +413,16 @@ sub find_nearby {
             $known_names{"$octet[0].$octet[1].$octet[2].$octet[3],"
                          . "$name[$#name]"} = 1;
             output("$octet[0].$octet[1].$octet[2].$octet[3]\t$name[$#name]");
-            find_nearby("$octet[0].$octet[1].$octet[2].$octet[3]"); # recurse 
+            find_nearby("$octet[0].$octet[1].$octet[2].$octet[3]"); # recurse
           }
         }
-      } 
+      }
       next if ($name[$#name] !~ /$dns/ && !$nopattern);
       $count++;
       $known_names{"$octet[0].$octet[1].$octet[2].$octet[3],"
                    . "$name[$#name]"} = 1;
       output("$octet[0].$octet[1].$octet[2].$octet[3]\t$name[$#name]");
-      find_nearby("$octet[0].$octet[1].$octet[2].$octet[3]");  # recurse  
+      find_nearby("$octet[0].$octet[1].$octet[2].$octet[3]");  # recurse
     }
   }
 }
@@ -431,7 +431,7 @@ sub http_connect {
   foreach my $_current_name (sort keys(%known_names)) {
     my @headers;
     my @my_headers;
-    
+
     @ip_and_hostname = split(/\x2C/, $_current_name);
     my @octet        = split(/\x2E/, $ip_and_hostname[0]);
     if ($octet[0] == 10                     || # can't query RFC1918
@@ -441,10 +441,10 @@ sub http_connect {
        ) {
       next;
     }
-    
-    open (HEADERS, $http_connect) 
+
+    open (HEADERS, $http_connect)
       or quit_early("Don't know why but I can't read from $http_connect now");
-    
+
     foreach (<HEADERS>) {
       $_ =~ s{^Host:\s*\n$}{Host: $ip_and_hostname[1]\n};
       push (@my_headers, $_);
@@ -454,11 +454,11 @@ sub http_connect {
       $my_headers[$#my_headers + 1] = "\r\n\r\n";
     }
     #TODO: add port selection and range support
-    my $socket = new IO::Socket::INET (	
-                                      	PeerAddr => "$ip_and_hostname[0]",
-	                              	PeerPort => 'http(80)',
-       					Timeout  => 10,
-                              		Proto    => 'tcp',
+    my $socket = new IO::Socket::INET (
+                                              PeerAddr => "$ip_and_hostname[0]",
+                                              PeerPort => 'http(80)',
+                                               Timeout  => 10,
+                                              Proto    => 'tcp',
                                       )
       or next;
     $webservers++;
@@ -483,7 +483,7 @@ sub output {
   my $text = shift;
   if ($logging) {
     if ($threads && threads->self->tid) {
-      push @output, "$text\n";  
+      push @output, "$text\n";
     } else {
       print FILE "$text\n";
     }
@@ -492,7 +492,7 @@ sub output {
 }
 
 sub quit_early {
-  my ($text, $logging, $suppress) = @_; 
+  my ($text, $logging, $suppress) = @_;
   print FILE "$text\nExiting...\n\n" if $logging;
   print "$text\nExiting...\n" unless $suppress;
   exit;
@@ -502,83 +502,83 @@ sub help {
   print <<EOHELP;
 fierce.pl (C) Copywrite 2006,2007 - By RSnake at http://ha.ckers.org/fierce/
 
-	Usage: perl fierce.pl [-dns example.com] [OPTIONS]
+        Usage: perl fierce.pl [-dns example.com] [OPTIONS]
 
 Overview:
-	Fierce is a semi-lightweight scanner that helps locate non-contiguous
-	IP space and hostnames against specified domains.  It's really meant
-	as a pre-cursor to nmap, unicornscan, nessus, nikto, etc, since all 
-	of those require that you already know what IP space you are looking 
-	for.  This does not perform exploitation and does not scan the whole 
-	internet indiscriminately.  It is meant specifically to locate likely 
-	targets both inside and outside a corporate network.  Because it uses 
-	DNS primarily you will often find mis-configured networks that leak 
-	internal address space. That's especially useful in targeted malware.
+        Fierce is a semi-lightweight scanner that helps locate non-contiguous
+        IP space and hostnames against specified domains.  It's really meant
+        as a pre-cursor to nmap, unicornscan, nessus, nikto, etc, since all
+        of those require that you already know what IP space you are looking
+        for.  This does not perform exploitation and does not scan the whole
+        internet indiscriminately.  It is meant specifically to locate likely
+        targets both inside and outside a corporate network.  Because it uses
+        DNS primarily you will often find mis-configured networks that leak
+        internal address space. That's especially useful in targeted malware.
 
 Options:
-	-connect	Attempt to make http connections to any non RFC1918
-		(public) addresses.  This will output the return headers but
-		be warned, this could take a long time against a company with
-		many targets, depending on network/machine lag.  I wouldn't
-		recommend doing this unless it's a small company or you have a
-		lot of free time on your hands (could take hours-days).  
-		Inside the file specified the text "Host:\\n" will be replaced
-		by the host specified. Usage:
+        -connect        Attempt to make http connections to any non RFC1918
+                (public) addresses.  This will output the return headers but
+                be warned, this could take a long time against a company with
+                many targets, depending on network/machine lag.  I wouldn't
+                recommend doing this unless it's a small company or you have a
+                lot of free time on your hands (could take hours-days).
+                Inside the file specified the text "Host:\\n" will be replaced
+                by the host specified. Usage:
 
-	perl fierce.pl -dns example.com -connect headers.txt
+        perl fierce.pl -dns example.com -connect headers.txt
 
-	-delay		The number of seconds to wait between lookups.
-	-dns		The domain you would like scanned.
-	-dnsfile  	Use DNS servers provided by a file (one per line) for
+        -delay          The number of seconds to wait between lookups.
+        -dns            The domain you would like scanned.
+        -dnsfile        Use DNS servers provided by a file (one per line) for
                 reverse lookups (brute force).
-	-dnsserver	Use a particular DNS server for reverse lookups 
-		(probably should be the DNS server of the target).  Fierce
-		uses your DNS server for the initial SOA query and then uses
-		the target's DNS server for all additional queries by default.
-	-file		A file you would like to output to be logged to.
-	-fulloutput	When combined with -connect this will output everything
-		the webserver sends back, not just the HTTP headers.
-	-help		This screen.
-	-nopattern	Don't use a search pattern when looking for nearby
-		hosts.  Instead dump everything.  This is really noisy but
-		is useful for finding other domains that spammers might be
-		using.  It will also give you lots of false positives, 
-		especially on large domains.
-	-range		Scan an internal IP range (must be combined with 
-		-dnsserver).  Note, that this does not support a pattern
-		and will simply output anything it finds.  Usage:
+        -dnsserver      Use a particular DNS server for reverse lookups
+                (probably should be the DNS server of the target).  Fierce
+                uses your DNS server for the initial SOA query and then uses
+                the target's DNS server for all additional queries by default.
+        -file           A file you would like to output to be logged to.
+        -fulloutput     When combined with -connect this will output everything
+                the webserver sends back, not just the HTTP headers.
+        -help           This screen.
+        -nopattern      Don't use a search pattern when looking for nearby
+                hosts.  Instead dump everything.  This is really noisy but
+                is useful for finding other domains that spammers might be
+                using.  It will also give you lots of false positives,
+                especially on large domains.
+        -range          Scan an internal IP range (must be combined with
+                -dnsserver).  Note, that this does not support a pattern
+                and will simply output anything it finds.  Usage:
 
-	perl fierce.pl -range 111.222.333.0-255 -dnsserver ns1.example.co
+        perl fierce.pl -range 111.222.333.0-255 -dnsserver ns1.example.co
 
-	-search		Search list.  When fierce attempts to traverse up and
-		down ipspace it may encounter other servers within other
-		domains that may belong to the same company.  If you supply a 
-		comma delimited list to fierce it will report anything found.
-		This is especially useful if the corporate servers are named
-		different from the public facing website.  Usage:
+        -search         Search list.  When fierce attempts to traverse up and
+                down ipspace it may encounter other servers within other
+                domains that may belong to the same company.  If you supply a
+                comma delimited list to fierce it will report anything found.
+                This is especially useful if the corporate servers are named
+                different from the public facing website.  Usage:
 
-	perl fierce.pl -dns examplecompany.com -search corpcompany,blahcompany 
+        perl fierce.pl -dns examplecompany.com -search corpcompany,blahcompany
 
-		Note that using search could also greatly expand the number of
-		hosts found, as it will continue to traverse once it locates
-		servers that you specified in your search list.  The more the
-		better.
-	-suppress	Suppress all TTY output (when combined with -file).
-	-tcptimeout	Specify a different timeout (default 10 seconds).  You
-		may want to increase this if the DNS server you are querying
-		is slow or has a lot of network lag.
-	-threads  Specify how many threads to use while scanning (default
-	  is single threaded).
-	-traverse	Specify a number of IPs above and below whatever IP you
-		have found to look for nearby IPs.  Default is 5 above and 
-		below.  Traverse will not move into other C blocks.
-	-version	Output the version number.
-	-wide		Scan the entire class C after finding any matching
-		hostnames in that class C.  This generates a lot more traffic
-		but can uncover a lot more information.
-	-wordlist	Use a seperate wordlist (one word per line).  Usage:
+                Note that using search could also greatly expand the number of
+                hosts found, as it will continue to traverse once it locates
+                servers that you specified in your search list.  The more the
+                better.
+        -suppress       Suppress all TTY output (when combined with -file).
+        -tcptimeout     Specify a different timeout (default 10 seconds).  You
+                may want to increase this if the DNS server you are querying
+                is slow or has a lot of network lag.
+        -threads  Specify how many threads to use while scanning (default
+          is single threaded).
+        -traverse       Specify a number of IPs above and below whatever IP you
+                have found to look for nearby IPs.  Default is 5 above and
+                below.  Traverse will not move into other C blocks.
+        -version        Output the version number.
+        -wide           Scan the entire class C after finding any matching
+                hostnames in that class C.  This generates a lot more traffic
+                but can uncover a lot more information.
+        -wordlist       Use a seperate wordlist (one word per line).  Usage:
 
-	perl fierce.pl -dns examplecompany.com -wordlist dictionary.txt
+        perl fierce.pl -dns examplecompany.com -wordlist dictionary.txt
 EOHELP
 exit;
 }
